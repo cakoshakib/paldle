@@ -3,42 +3,96 @@ import championData from "./data/champions.json";
 
 const App = () => {
   const [guess, setGuess] = useState("");
-  const [responses, setResponses] = useState<String[]>([]);
+  const [responses, setResponses] = useState<number[][]>([]);
+  const [error, setError] = useState<String>("");
 
   const champNames = championData.map((championInfo) =>
     championInfo.name.toLowerCase()
   );
   console.log(champNames);
-  const answer = champNames[10];
+  const answerId = 10;
+  const answer = champNames[answerId];
 
   const guessHandler = (event: any) => {
+    event.preventDefault();
+    setGuess("");
+
     const g = guess.toLowerCase();
-    console.log("Guessed", g);
+
     if (!champNames.includes(g)) {
-      setResponses(["Not a valid champion.", ...responses]);
+      setError("Not a valid champion.");
     } else if (g === answer) {
-      setResponses(["You won!", ...responses]);
+      setResponses([[1, 1, 1], ...responses]);
     } else {
-      setResponses(["Not quite.", ...responses]);
+      const champInfo = championData[champNames.indexOf(g)];
+      const res = [0, 0, 0];
+      if (champInfo.class === championData[answerId].class) {
+        res[0] = 1;
+      }
+
+      if (champInfo.health === championData[answerId].health) {
+        res[1] = 1;
+      } else if (
+        parseInt(champInfo.health) > parseInt(championData[answerId].health)
+      ) {
+        res[1] = 2;
+      }
+
+      if (champInfo.match_count === championData[answerId].match_count) {
+        res[2] = 1;
+      } else if (
+        parseInt(champInfo.match_count) >
+        parseInt(championData[answerId].match_count)
+      ) {
+        res[2] = 2;
+      }
+
+      setResponses([res, ...responses]);
+
+      if (responses.length > 3) {
+        setError("You lost 🤣");
+      }
     }
   };
 
-  const guessChange = (event: any) => {
-    setGuess(event.target.value);
-  };
+  const output = responses.map((res) => (
+    <tr>
+      {res.map((x, i) => {
+        if (x === 1) {
+          return <th>🟩</th>;
+        } else if (i === 0) {
+          return <th>🟥</th>;
+        } else if (x === 0) {
+          return <th>🔼</th>;
+        } else {
+          return <th>🔽</th>;
+        }
+      })}
+    </tr>
+  ));
 
   return (
     <div id="main">
       <div id="game-window">
-        <div id="guesses">
-          {responses.map((response) => (
-            <div>{response}</div>
-          ))}
-        </div>
-        <div id="submission">
-          <input placeholder="Guess a Champion" onChange={guessChange} />
-          <button onClick={guessHandler}>Submit</button>
-        </div>
+        <table id="guesses">
+          <tr id="guess-header">
+            <th>Class </th>
+            <th>HP </th>
+            <th>Matches </th>
+          </tr>
+          {output}
+        </table>
+        <form id="submission">
+          <input
+            placeholder="Guess a Champion"
+            value={guess}
+            onChange={(e) => setGuess(e.target.value)}
+          />
+          <button type="submit" onClick={guessHandler}>
+            Submit
+          </button>
+        </form>
+        {error}
       </div>
     </div>
   );
